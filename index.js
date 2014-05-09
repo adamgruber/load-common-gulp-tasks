@@ -11,7 +11,8 @@ var gutil = require('gulp-util'),
   map = require('map-stream'),
   plato = require('gulp-plato'),
   fs = require('fs'),
-  open = require('gulp-open');
+  open = require('gulp-open'),
+  less = require('gulp-less');
 
 /**
  * Assigns default tasks to your gulp instance
@@ -23,7 +24,8 @@ module.exports = function (gulp, options) {
   // we need to track total errors and exit code manually since gulp doesn't have a good way to do this internally
   var exitCode = 0,
     totalLintErrors = 0,
-    totalFelintErrors = 0;
+    totalFelintErrors = 0,
+    lessError = 0;
 
   // defaults
   gulp.options = {
@@ -51,7 +53,13 @@ module.exports = function (gulp, options) {
       ],
       test: [
         './test/**/*.js'
-      ]
+      ],
+      styles: {
+        less: [
+          // './content/styles/less/*.less',
+          // './content/styles/less/**/*.less'
+        ]
+      }
     },
     jshintrc: {
       server: './node_modules/load-common-gulp-tasks/lint/.jshintrc',
@@ -61,6 +69,9 @@ module.exports = function (gulp, options) {
     complexity: {
       destDir: './target/complexity',
       options: {} // https://github.com/philbooth/complexity-report#command-line-options
+    },
+    lessOpts: {
+      paths: []
     }
   };
 
@@ -81,7 +92,8 @@ module.exports = function (gulp, options) {
   });
 
   function taskPassed(taskName) {
-    var msg = "gulp '" + taskName + "' passed";
+    var check = gutil.colors.green.bold(process.platform !== 'win32' ? '✔ ' : '');
+    var msg = check + "gulp '" + taskName + "' passed";
     console.log(gutil.colors.green(msg));
   }
 
@@ -89,8 +101,41 @@ module.exports = function (gulp, options) {
   function beforeEach() {
     totalLintErrors = 0;
     totalFelintErrors = 0;
-    exitCode = 0;
+    exitCode = 0,
+    lessError = 0;
   }
+
+  // ----------------
+  // less
+  // ----------------
+
+  function lessTest() {
+    beforeEach();
+    return gulp.src(gulp.options.paths.styles.less)
+      .pipe(less(gulp.options.lessOpts))
+      .on('error', function (err) {
+        lessError = 1;
+        gutil.log(err);
+      });
+  }
+
+  function lessOnEnd() {
+    if (lessError) {
+      var errString = '\n' + (process.platform !== 'win32' ? '✖ ' : '') + 'Less errors found\n';
+      console.log(gutil.colors.red.bold(errString));
+      gutil.beep();
+    } else {
+      taskPassed('lessTest');
+    }
+  }
+
+  gulp.task('lessTest', 'Check for LESS compilation errors', function () {
+    return lessTest()
+      .on('end', lessOnEnd)
+      .pipe(size({
+        title: 'lessTest'
+      }));
+  });
 
   // ----------------
   // lint
@@ -306,12 +351,12 @@ module.exports = function (gulp, options) {
   // combo tasks
   // ----------------
 
-  gulp.task('ci', 'Lint, tests and test coverage', ['lint', 'felint', 'test-cover']);
+  gulp.task('ci', 'Lint, tests and test coverage', ['lessTest', 'lint', 'felint', 'test-cover']);
 
-  gulp.task('ci-watch', false, ['lint-watch', 'felint-watch', 'test-cover-watch']);
+  gulp.task('ci-watch', false, ['lessTest', 'lint-watch', 'felint-watch', 'test-cover-watch']);
 
   gulp.task('watch-all', 'Watch files and run all ci validation on change', function () {
-    gulp.watch(gulp.options.paths.lint, ['ci-watch']);
+    gulp.watch(gulp.options.paths.lint.concat(gulp.options.paths.styles.less), ['ci-watch']);
   });
 
   gulp.task('watch', 'Watch files and run tests on change', function () {
