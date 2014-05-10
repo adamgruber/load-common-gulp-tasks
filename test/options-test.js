@@ -18,7 +18,7 @@ describe('options', function () {
   it('should have default paths', function () {
     loadCommonGulpTasks(gulp);
 
-    should(_.keys(gulp.options.paths).length).eql(4);
+    should(_.keys(gulp.options.paths).length).eql(5);
 
     should(gulp.options.paths.lint.length).eql(3);
     should(_.contains(gulp.options.paths.lint, './*.js')).ok;
@@ -45,7 +45,7 @@ describe('options', function () {
       }
     });
 
-    should(_.keys(gulp.options.paths).length).eql(4);
+    should(_.keys(gulp.options.paths).length).eql(5);
 
     should(gulp.options.paths.lint.length).eql(2);
     should(_.contains(gulp.options.paths.lint, 'my_custom_file.js')).ok;
