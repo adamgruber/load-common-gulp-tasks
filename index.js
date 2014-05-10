@@ -1,18 +1,19 @@
 'use strict';
 
-var gutil = require('gulp-util'),
-  jshint = require('gulp-jshint'),
-  stylish = require('jshint-stylish'),
-  mocha = require('gulp-mocha'),
-  istanbul = require('gulp-istanbul'),
-  coverageEnforcer = require('gulp-istanbul-enforcer'),
-  size,
-  _ = require('lodash'),
-  map = require('map-stream'),
-  plato = require('gulp-plato'),
-  fs = require('fs'),
-  open = require('gulp-open'),
-  less = require('gulp-less');
+var _           = require('lodash'),
+    path        = require('path'),
+    gutil       = require('gulp-util'),
+    jshint      = require('gulp-jshint'),
+    stylish     = require('jshint-stylish'),
+    mocha       = require('gulp-mocha'),
+    istanbul    = require('gulp-istanbul'),
+    covEnforcer = require('gulp-istanbul-enforcer'),
+    map         = require('map-stream'),
+    plato       = require('gulp-plato'),
+    fs          = require('fs'),
+    open        = require('gulp-open'),
+    less        = require('gulp-less'),
+    size;
 
 /**
  * Assigns default tasks to your gulp instance
@@ -23,9 +24,9 @@ module.exports = function (gulp, options) {
 
   // we need to track total errors and exit code manually since gulp doesn't have a good way to do this internally
   var exitCode = 0,
-    totalLintErrors = 0,
-    totalFelintErrors = 0,
-    lessError = 0;
+      totalLintErrors = 0,
+      totalFelintErrors = 0,
+      lessError = 0;
 
   // defaults
   gulp.options = {
@@ -41,29 +42,29 @@ module.exports = function (gulp, options) {
     },
     paths: {
       lint: [
-        './*.js',
-        './lib/**/*.js',
-        './test/**/*.js'
+        'lib/**/*.js',
+        'test/**/*.js',
+        '!node_modules/**',
+        '!target/**'
       ],
       felint: [
-        './content/**/*.js'
+        'content/**/*.js'
       ],
       cover: [
-        './lib/**/*.js'
+        'lib/**/*.js'
       ],
       test: [
-        './test/**/*.js'
+        'test/**/*.js'
       ],
       styles: {
         less: [
-          // './content/styles/less/*.less',
-          // './content/styles/less/**/*.less'
+          'content/styles/less/*.less'
         ]
       }
     },
     jshintrc: {
-      server: './node_modules/load-common-gulp-tasks/lint/.jshintrc',
-      client: './node_modules/load-common-gulp-tasks/felint/.jshintrc'
+      server: path.join(__dirname, 'lint/.jshintrc'),
+      client: path.join(__dirname, 'felint/.jshintrc')
     },
     showStreamSize: false,
     complexity: {
@@ -267,7 +268,7 @@ module.exports = function (gulp, options) {
           title: 'test-cover'
         }))
         .pipe(istanbul.writeReports(gulp.options.coverageSettings.coverageDirectory))
-        .pipe(coverageEnforcer(gulp.options.coverageSettings))
+        .pipe(covEnforcer(gulp.options.coverageSettings))
         .on('error', function (err) { // handler for istanbul error
           testErrorHandler(err);
           process.emit('exit');
@@ -285,7 +286,7 @@ module.exports = function (gulp, options) {
           title: 'test-cover'
         }))
         .pipe(istanbul.writeReports(gulp.options.coverageSettings.coverageDirectory))
-        .pipe(coverageEnforcer(gulp.options.coverageSettings))
+        .pipe(covEnforcer(gulp.options.coverageSettings))
         .on('error', testErrorHandler) // handler for istanbul error
         .on('end', cb);
     });
